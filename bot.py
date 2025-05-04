@@ -673,12 +673,16 @@ async def sync_all_users(update: Update, context: CallbackContext):
 async def setup_bot_menu(application: Application):
     """Set up the bot's menu button to open the web app"""
     try:
+        # Validate WEB_APP_URL
+        if not WEB_APP_URL or not isinstance(WEB_APP_URL, str):
+            raise ValueError("WEB_APP_URL is not set or is invalid")
+
         # Set the bot's menu button to open the web app
         await application.bot.set_chat_menu_button(
             menu_button={"type": "web_app", "text": "Open App", "web_app": {"url": WEB_APP_URL}}
         )
         logger.info("Bot menu button configured successfully")
-        
+
         # Set bot commands
         commands = [
             ("start", "Start the bot"),
@@ -688,6 +692,8 @@ async def setup_bot_menu(application: Application):
         ]
         await application.bot.set_my_commands(commands)
         logger.info("Bot commands configured successfully")
+    except ValueError as e:
+        logger.error(f"Invalid configuration: {e}")
     except Exception as e:
         logger.error(f"Error setting up bot menu: {e}")
 
@@ -696,50 +702,41 @@ def main():
     application = (
         Application.builder()
         .token(TOKEN)
-        .concurrent_updates(True)  # Recommended for job queue
-        .post_init(lambda app: app.job_queue)  # Ensure JobQueue is initialized
+        .concurrent_updates(True)  # Required for job queue
+        .arbitrary_callback_data(True)  # Recommended
         .build()
     )
-    
+
     # Ensure job queue is initialized
-    job_queue = application.job_queue
-    if job_queue is None:
-        raise RuntimeError("Job queue not initialized! Ensure PTB is installed with [job-queue] extras.")
-    
-    # Add your jobs
-    job_queue.run_repeating(send_automatic_messages, interval=60, first=10)
-    job_queue.run_repeating(calculate_daily_profits, interval=3600, first=30)  # Hourly
-    job_queue.run_repeating(process_payment_batches, interval=21600, first=60)  # Every 6 hours
-    job_queue.run_repeating(send_fake_payment_proofs, interval=21600, first=120)  # Every 6 hours
+    if not hasattr(application, 'job_queue') or application.job_queue is None:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        scheduler = AsyncIOScheduler()
+        application.job_queue.scheduler = scheduler
+        application.job_queue.start()
+
+    # Add jobs
+    application.job_queue.run_repeating(send_automatic_messages, interval=60.0, first=10.0)
+    application.job_queue.run_repeating(calculate_daily_profits, interval=3600.0, first=30.0)
+    application.job_queue.run_repeating(process_payment_batches, interval=21600.0, first=60.0)
+    application.job_queue.run_repeating(send_fake_payment_proofs, interval=21600.0, first=120.0)
 
     # Command handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("menu", menu))
     application.add_handler(CommandHandler("stats", admin_stats))
-    
-    # Callback query handlers
     application.add_handler(CallbackQueryHandler(verify_account, pattern="^verify$"))
     application.add_handler(CallbackQueryHandler(handle_referrals, pattern="^referrals$"))
     application.add_handler(CallbackQueryHandler(handle_withdrawal, pattern="^withdraw$"))
     application.add_handler(CallbackQueryHandler(sync_all_users, pattern="^sync_all$"))
     application.add_handler(CallbackQueryHandler(why_verify, pattern="^why_verify$"))
     application.add_handler(CallbackQueryHandler(check_batch, pattern="^check_batch$"))
-    
+
     # Set up bot menu button
-    asyncio.run(setup_bot_menu(application))
-    
-    # Webhook setup
-    if WEBHOOK_URL:
-        application.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            url_path=TOKEN,
-            webhook_url=f"{WEBHOOK_URL}/{TOKEN}"
-        )
-        logger.info(f"Webhook running at {WEBHOOK_URL}/{TOKEN}")
-    else:
-        application.run_polling()
-        logger.info("Bot running in polling mode")
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(setup_bot_menu(application))
+
+    # Start the bot
+    application.run_polling()
 
 if __name__ == "__main__":
     # Initialize first payment batch
