@@ -693,8 +693,23 @@ async def setup_bot_menu(application: Application):
 
 # ===== MAIN SETUP =====
 def main():
-    """Start the bot."""
-    application = Application.builder().token(TOKEN).build()
+    application = (
+        Application.builder()
+        .token(TOKEN)
+        .concurrent_updates(True)  # Recommended for job queue
+        .build()
+    )
+    
+    # Ensure job queue is initialized
+    job_queue = application.job_queue
+    if job_queue is None:
+        raise RuntimeError("Job queue not initialized! Check PTB installation")
+    
+    # Add your jobs
+    job_queue.run_repeating(send_automatic_messages, interval=60, first=10)
+    job_queue.run_repeating(calculate_daily_profits, interval=3600, first=30)  # Hourly
+    job_queue.run_repeating(process_payment_batches, interval=21600, first=60)  # Every 6 hours
+    job_queue.run_repeating(send_fake_payment_proofs, interval=21600, first=120)  # Every 6 hours
 
     # Command handlers
     application.add_handler(CommandHandler("start", start))
@@ -708,13 +723,6 @@ def main():
     application.add_handler(CallbackQueryHandler(sync_all_users, pattern="^sync_all$"))
     application.add_handler(CallbackQueryHandler(why_verify, pattern="^why_verify$"))
     application.add_handler(CallbackQueryHandler(check_batch, pattern="^check_batch$"))
-    
-    # Scheduled jobs
-    job_queue = application.job_queue
-    job_queue.run_repeating(send_automatic_messages, interval=60, first=10)  # Every minute
-    job_queue.run_repeating(calculate_daily_profits, interval=3600, first=30)  # Hourly
-    job_queue.run_repeating(process_payment_batches, interval=21600, first=60)  # Every 6 hours
-    job_queue.run_repeating(send_fake_payment_proofs, interval=21600, first=120)  # Every 6 hours
     
     # Set up bot menu button
     asyncio.run(setup_bot_menu(application))
