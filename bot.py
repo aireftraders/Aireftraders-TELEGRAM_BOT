@@ -697,13 +697,14 @@ def main():
         Application.builder()
         .token(TOKEN)
         .concurrent_updates(True)  # Recommended for job queue
+        .post_init(lambda app: app.job_queue)  # Ensure JobQueue is initialized
         .build()
     )
     
     # Ensure job queue is initialized
     job_queue = application.job_queue
     if job_queue is None:
-        raise RuntimeError("Job queue not initialized! Check PTB installation")
+        raise RuntimeError("Job queue not initialized! Ensure PTB is installed with [job-queue] extras.")
     
     # Add your jobs
     job_queue.run_repeating(send_automatic_messages, interval=60, first=10)
