@@ -18,7 +18,7 @@ from telegram.ext import (
 import httpx
 
 # ===== CONFIGURATION =====
-TOKEN = os.getenv("7854899818:AAHUAbxL51Vu01HSgWPNpUjgyev9c0FOv0E")
+TELEGRAM_TOKEN = os.getenv("7854899818:AAHUAbxL51Vu01HSgWPNpUjgyev9c0FOv0E")
 WEBHOOK_URL = os.getenv("https://v0-paystack-backend-setup-o2dxvq4do.vercel.app/api/telegram/webhook")  # Should be your backend URL
 WEB_APP_URL = os.getenv("https://v0-new-project-kpsjngutvqx.vercel.app")  # Should be your frontend URL
 ADMIN_IDS = [int(id) for id in os.getenv("7484871326", "").split(",") if id]
