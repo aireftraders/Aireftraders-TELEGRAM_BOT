@@ -413,19 +413,47 @@ async def update_login_streak(user_id: str, context: CallbackContext = None):
 async def sync_with_web_app(user_id: str):
     """Sync user data between bot and web app"""
     try:
-        async with httpx.AsyncClient() as client:
+        user_data = users_db.get(user_id, {})
+        
+        # Add more fields if needed
+        sync_data = {
+            "user_id": user_id,
+            "user_data": {
+                "balance": user_data.get('balance', 5000),
+                "referrals": user_data.get('referrals', 0),
+                "adsWatched": user_data.get('ads_watched', 0),
+                "verified": user_data.get('verified', False),
+                "tradingActive": user_data.get('trading_active', False),
+                "firstName": user_data.get('first_name', ''),
+                "lastName": user_data.get('last_name', ''),
+                "username": user_data.get('username', '')
+            }
+        }
+        
+        # Log the data being sent
+        logger.info(f"Syncing user data for {user_id}: {sync_data}")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{WEB_APP_URL}/api/telegram/sync",
-                json={
-                    "user_id": user_id,
-                    "user_data": users_db.get(user_id, {})
-                },
-                timeout=10.0
+                json=sync_data,
+                headers={
+                    "Content-Type": "application/json"
+                }
             )
-            if response.status_code != 200:
-                logger.error(f"Sync failed with status {response.status_code}")
+            
+            # Log the response
+            logger.info(f"Sync response status: {response.status_code}")
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"Sync successful: {result}")
+                return result
+            else:
+                logger.error(f"Sync failed with status {response.status_code}: {response.text}")
+                return None
     except Exception as e:
         logger.error(f"Error syncing with web app: {e}")
+        return None
 
 # ===== PAYMENT & VERIFICATION =====
 async def verify_account(update: Update, context: CallbackContext):
