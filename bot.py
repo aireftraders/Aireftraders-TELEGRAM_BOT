@@ -29,7 +29,7 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 WEB_APP_URL = os.getenv("WEB_APP_URL")
 ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS", "").split(",") if id]
 BOT_USERNAME = os.getenv("BOT_USERNAME")
-PORT = int(os.environ.get("PORT", 8443))
+PORT = int(os.environ.get("PORT", 8080))
 NIGERIA_TZ = pytz.timezone('Africa/Lagos')
 
 # ===== LOGGING =====
@@ -793,10 +793,10 @@ def main():
         application.run_webhook(
             listen="0.0.0.0",
             port=PORT,
-            url_path=TOKEN,
-            webhook_url=f"{WEBHOOK_URL}/{TOKEN}"
+            url_path=f"api/telegram-webhook/{TOKEN}",
+            webhook_url=f"{WEBHOOK_URL}/api/telegram-webhook/{TOKEN}"
         )
-        logger.info(f"Webhook running at {WEBHOOK_URL}/{TOKEN}")
+        logger.info(f"Webhook running at {WEBHOOK_URL}/api/telegram-webhook/{TOKEN}")
     else:
         application.run_polling()
         logger.info("Bot running in polling mode")
