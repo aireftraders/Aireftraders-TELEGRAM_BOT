@@ -3,3 +3,4 @@ httpx==0.24.1
 pytz==2023.3
 python-dotenv==1.0.0
 apscheduler==3.10.1  # Backup scheduler
+python-telegram-bot[webhooks]==22.0
