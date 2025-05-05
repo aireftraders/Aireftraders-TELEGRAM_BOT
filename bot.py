@@ -790,6 +790,9 @@ def main():
     
     # Webhook setup
     if WEBHOOK_URL:
+        if not WEBHOOK_URL.startswith("https://"):
+            logger.error("Invalid WEBHOOK_URL: Must start with 'https://'")
+            raise ValueError("Invalid WEBHOOK_URL: Must start with 'https://'")
         application.run_webhook(
             listen="0.0.0.0",
             port=PORT,
