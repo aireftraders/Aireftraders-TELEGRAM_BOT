@@ -27,6 +27,8 @@ from telegram.ext import (
 from telegram.constants import ParseMode
 import httpx
 from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 # Load environment variables
 load_dotenv()
@@ -1085,6 +1087,13 @@ async def setup_bot_menu(application: Application):
     except Exception as e:
         logger.error(f"Error setting up bot menu: {e}")
 
+# ===== FASTAPI APP =====
+app = FastAPI()
+
+@app.get("/")
+async def health_check():
+    return JSONResponse({"status": "ok", "bot": "running"})
+
 # ===== MAIN SETUP =====
 def main():
     """Start the bot."""
@@ -1141,18 +1150,35 @@ def main():
     asyncio.set_event_loop(loop)
     loop.run_until_complete(setup_bot_menu(application))
     
-    # Webhook setup
     if WEBHOOK_URL:
-        if not WEBHOOK_URL.startswith("https://"):
-            logger.error("Invalid WEBHOOK_URL: Must start with 'https://'")
-            raise ValueError("Invalid WEBHOOK_URL: Must start with 'https://'")
+        # Properly format the webhook URL
+        webhook_url = f"{WEBHOOK_URL.rstrip('/')}/api/telegram-webhook/{TOKEN}"
+        
+        # Set up webhook
+        async def post_init(application: Application):
+            await application.bot.set_webhook(
+                url=webhook_url,
+                drop_pending_updates=True
+            )
+            logger.info(f"Webhook set to: {webhook_url}")
+
+        # Mount FastAPI app
+        application.add_routes(app)
+
         application.run_webhook(
             listen="0.0.0.0",
             port=PORT,
-            url_path=f"api/telegram-webhook/{TOKEN}",
-            webhook_url=f"{WEBHOOK_URL}/api/telegram-webhook/{TOKEN}"
+            webhook_url=webhook_url,
+            secret_token=None,
+            cert=None,
+            key=None,
+            bootstrap_retries=0,
+            allowed_updates=None,
+            drop_pending_updates=True,
+            close_loop=True,
+            http_version="1.1",
+            post_init=post_init
         )
-        logger.info(f"Webhook running at {WEBHOOK_URL}/api/telegram-webhook/{TOKEN}")
     else:
         application.run_polling()
         logger.info("Bot running in polling mode")
