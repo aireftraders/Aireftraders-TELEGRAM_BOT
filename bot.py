@@ -396,6 +396,29 @@ async def roll_dice(update: Update, context: CallbackContext):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
+async def handle_game_selection(update: Update, context: CallbackContext):
+    """Handle game selection from the games menu."""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(query.from_user.id)
+    user = get_user(user_id)
+    game_type = query.data.split("_")[1]  # Extract game type from callback data
+
+    # Check if the user has attempts left for the selected game
+    if user["game_attempts"].get(game_type, 0) <= 0:
+        await query.edit_message_text(f"⚠️ You've used all your attempts for {game_type.replace('_', ' ').title()} today.")
+        return
+
+    # Redirect to the appropriate game function
+    if game_type == GameType.MEMORY.value:
+        await start_memory_game(update, context)
+    elif game_type == GameType.DICE.value:
+        await start_dice_game(update, context)
+    # Add handling for other games as needed
+    else:
+        await query.edit_message_text("⚠️ This game is not yet implemented.")
+
 # ===== CORE BOT HANDLERS =====
 async def start(update: Update, context: CallbackContext):
     user = update.effective_user
