@@ -32,11 +32,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ===== CONFIGURATION =====
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TOKEN = os.getenv("7854899818:AAHUAbxL51Vu01HSgWPNpUjgyev9c0FOv0E")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-WEB_APP_URL = os.getenv("WEB_APP_URL")
-ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS", "").split(",") if id]
-BOT_USERNAME = os.getenv("BOT_USERNAME")
+WEB_APP_URL = os.getenv("https://v0-new-project-kpsjngutvqx.vercel.app")
+ADMIN_IDS = [int(id) for id in os.getenv("7484871326", "").split(",") if id]
+BOT_USERNAME = os.getenv("AIREFTRADERSbot")
 PORT = int(os.environ.get("PORT", 8080))
 NIGERIA_TZ = pytz.timezone('Africa/Lagos')
 
