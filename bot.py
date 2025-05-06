@@ -32,11 +32,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ===== CONFIGURATION =====
-TOKEN = os.getenv("7854899818:AAHUAbxL51Vu01HSgWPNpUjgyev9c0FOv0E")
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-WEB_APP_URL = os.getenv("https://v0-new-project-kpsjngutvqx.vercel.app")
-ADMIN_IDS = [int(id) for id in os.getenv("7484871326", "").split(",") if id]
-BOT_USERNAME = os.getenv("AIREFTRADERSbot")
+WEB_APP_URL = os.getenv("WEB_APP_URL")
+ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS", "").split(",") if id]
+BOT_USERNAME = os.getenv("BOT_USERNAME")
 PORT = int(os.environ.get("PORT", 8080))
 NIGERIA_TZ = pytz.timezone('Africa/Lagos')
 
@@ -225,7 +225,7 @@ async def check_trading_activation(user_id: str, context: CallbackContext = None
     if user.get('referrals', 0) >= 6 and user.get('ads_watched', 0) >= 20:
         if not user.get('trading_active', False):
             user['trading_active'] = True
-            user['trading_capital'] = 5000 + (user.get('referrals', 0) * 5000
+            user['trading_capital'] = 5000 + (user.get('referrals', 0) * 5000)
             
             if context:
                 try:
